@@ -1,4 +1,4 @@
-/*! cornerstoneTools - v0.7.8 - 2016-05-17 | (c) 2014 Chris Hafey | https://github.com/chafey/cornerstoneTools */
+/*! cornerstoneTools - v0.7.8 - 2016-06-30 | (c) 2014 Chris Hafey | https://github.com/chafey/cornerstoneTools */
 // Begin Source: src/header.js
 if (typeof cornerstone === 'undefined') {
     cornerstone = {};
@@ -3677,9 +3677,11 @@ if (typeof cornerstoneTools === 'undefined') {
         $(eventData.element).on('CornerstoneToolsMouseUp', mouseUpCallback);
 
         var measurementData = {
+            color: undefined,
+            showMe: true,
             visible: true,
             active: true,
-            handles: []
+            handles: [],
         };
 
         var config = cornerstoneTools.freehand.getConfiguration();
@@ -3788,18 +3790,27 @@ if (typeof cornerstoneTools === 'undefined') {
         var color;
         var lineWidth = cornerstoneTools.toolStyle.getToolWidth();
         var fillColor = cornerstoneTools.toolColors.getFillColor();
-
         for (var i = 0; i < toolData.data.length; i++) {
             context.save();
 
             var data = toolData.data[i];
+            if (data['show'] === false) {
+                continue;
+                // If showMe is false, don't draw the roi at all.
+            }
 
-            if (data.active) {
-                color = cornerstoneTools.toolColors.getActiveColor();
-                fillColor = cornerstoneTools.toolColors.getFillColor();
+            if (data['color'] !== undefined) {
+                // Use the roi-specific color instead of defaults.
+                color = data['color'];
+                fillColor = data['fillColor'];
             } else {
-                color = cornerstoneTools.toolColors.getToolColor();
-                fillColor = cornerstoneTools.toolColors.getToolColor();
+                if (data.active) {
+                    color = cornerstoneTools.toolColors.getActiveColor();
+                    fillColor = cornerstoneTools.toolColors.getFillColor();
+                } else {
+                    color = cornerstoneTools.toolColors.getToolColor();
+                    fillColor = cornerstoneTools.toolColors.getToolColor();
+                }
             }
 
             var handleStart;
@@ -3842,7 +3853,10 @@ if (typeof cornerstoneTools === 'undefined') {
                 cornerstoneTools.drawHandles(context, eventData, config.mouseLocation.handles, color, options);
             }
             // draw the handles
-            cornerstoneTools.drawHandles(context, eventData, data.handles, color, options);
+            if (data.active) {
+                // Only draw the vertices if this is the active contour.
+                cornerstoneTools.drawHandles(context, eventData, data.handles, color, options);
+            }
 
             context.restore();
         }
