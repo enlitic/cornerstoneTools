@@ -15,7 +15,11 @@
         freehand: false,
         modifying: false,
         currentHandle: 0,
-        currentTool: -1
+        currentTool: -1,
+        callbacks: {
+            onStartDrawing: undefined,
+            onEndDrawing: undefined
+        }
     };
 
     ///////// BEGIN ACTIVE TOOL ///////
@@ -196,6 +200,12 @@
 
         var toolData = cornerstoneTools.getToolState(eventData.element, toolType);
         config.currentTool = toolData.data.length - 1;
+
+        var data = toolData.data[config.currentTool];
+
+        if (typeof config.callbacks.onStartDrawing === 'function') {
+            config.callbacks.onStartDrawing(data);
+        }
     }
 
     function endDrawing(eventData, handleNearby) {
@@ -227,6 +237,10 @@
         $(eventData.element).off('CornerstoneToolsMouseMove', mouseMoveCallback);
 
         cornerstone.updateImage(eventData.element);
+
+        if (typeof config.callbacks.onEndDrawing === 'function') {
+            config.callbacks.onEndDrawing(data);
+        }
     }
 
     function mouseDownCallback(e, eventData) {

@@ -88,9 +88,6 @@ is used by our example image loader-->
     var imageId = 'example://1';
     
     cornerstoneTools.toolStyle.setToolWidth(3);
-    cornerstoneTools.toolColors.setToolColor("#ffcc33");
-    cornerstoneTools.toolColors.setActiveColor("#0099ff");
-    cornerstoneTools.toolColors.setFillColor("#0099ff");
 
     var randomize = function() {
         toolState = cornerstoneTools.globalImageIdSpecificToolStateManager.saveToolState()
@@ -110,19 +107,31 @@ is used by our example image loader-->
     // image enable the dicomImage element
     cornerstone.enable(element);
     cornerstone.loadImage(imageId).then(function(image) {
+        function activate(id) {
+            $('a').removeClass('active');
+            $(id).addClass('active');
+        }
+
+        function setFreehandColor(toolInstanceData) {
+            toolInstanceData.id = Math.round(Math.random()*1000);
+            toolInstanceData.color = "rgb("+
+                Math.round(Math.random()*255)+","+
+                Math.round(Math.random()*255)+","+
+                Math.round(Math.random()*255)+")";
+        }
+
         cornerstone.displayImage(element, image);
         cornerstoneTools.mouseInput.enable(element);
 
         // Enable all tools we want to use with this element
         cornerstoneTools.freehand.activate(element, 1);
 
-        activate("#activate");
+        var freehandConfig = cornerstoneTools.freehand.getConfiguration();
+        freehandConfig.callbacks.onStartDrawing = setFreehandColor;
+        freehandConfig.callbacks.onEndDrawing = ((toolInstanceData) => console.log("Done drawing #"+toolInstanceData.id));
+        cornerstoneTools.freehand.setConfiguration(freehandConfig);
 
-        function activate(id)
-        {
-            $('a').removeClass('active');
-            $(id).addClass('active');
-        }
+        activate("#activate");
 
         // Tool button event handlers that set the new active tool
         $('#disable').click(function() {
