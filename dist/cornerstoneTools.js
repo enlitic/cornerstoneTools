@@ -1,4 +1,4 @@
-/*! cornerstoneTools - v0.7.8 - 2016-06-30 | (c) 2014 Chris Hafey | https://github.com/chafey/cornerstoneTools */
+/*! cornerstoneTools - v0.7.8 - 2016-07-27 | (c) 2014 Chris Hafey | https://github.com/chafey/cornerstoneTools */
 // Begin Source: src/header.js
 if (typeof cornerstone === 'undefined') {
     cornerstone = {};
@@ -3511,7 +3511,11 @@ if (typeof cornerstoneTools === 'undefined') {
         freehand: false,
         modifying: false,
         currentHandle: 0,
-        currentTool: -1
+        currentTool: -1,
+        callbacks: {
+            onStartDrawing: undefined,
+            onEndDrawing: undefined
+        }
     };
 
     ///////// BEGIN ACTIVE TOOL ///////
@@ -3692,6 +3696,12 @@ if (typeof cornerstoneTools === 'undefined') {
 
         var toolData = cornerstoneTools.getToolState(eventData.element, toolType);
         config.currentTool = toolData.data.length - 1;
+
+        var data = toolData.data[config.currentTool];
+
+        if (typeof config.callbacks.onStartDrawing === 'function') {
+            config.callbacks.onStartDrawing(data);
+        }
     }
 
     function endDrawing(eventData, handleNearby) {
@@ -3723,6 +3733,10 @@ if (typeof cornerstoneTools === 'undefined') {
         $(eventData.element).off('CornerstoneToolsMouseMove', mouseMoveCallback);
 
         cornerstone.updateImage(eventData.element);
+
+        if (typeof config.callbacks.onEndDrawing === 'function') {
+            config.callbacks.onEndDrawing(data);
+        }
     }
 
     function mouseDownCallback(e, eventData) {
