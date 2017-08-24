@@ -31,6 +31,7 @@
                 <a id="enable" class="list-group-item">Enable</a>
                 <a id="activate" class="list-group-item">Activate</a>
                 <a id="deactivate" class="list-group-item">Deactivate</a>
+		<a id="randomize" class="list-group-item">Randomize</a>
             </ul>
             <br/>
             <ul class="list-group">
@@ -87,26 +88,50 @@ is used by our example image loader-->
     var imageId = 'example://1';
     
     cornerstoneTools.toolStyle.setToolWidth(3);
-    cornerstoneTools.toolColors.setToolColor("#ffcc33");
-    cornerstoneTools.toolColors.setActiveColor("#0099ff");
-    cornerstoneTools.toolColors.setFillColor("#0099ff");
 
+    var randomize = function() {
+        toolState = cornerstoneTools.globalImageIdSpecificToolStateManager.saveToolState()
+        Object.keys(toolState).forEach(function(imageId) {
+    console.log(toolState[imageId]);
+    for (var i = 0; i < toolState[imageId]['freehand'].data.length; i +=1) {
+			toolState[imageId]['freehand']['data'][i]['showMe'] = (Math.random() > .5);
+    randomColor = (Math.random() > .5) ? "#00ff00" : "#ff0000";
+    			toolState[imageId]['freehand']['data'][i]['color'] = randomColor;
+    }
+    
+    ;});
+    
+    cornerstoneTools.globalImageIdSpecificToolStateManager.restoreToolState( toolState );  
+    };
+    
     // image enable the dicomImage element
     cornerstone.enable(element);
     cornerstone.loadImage(imageId).then(function(image) {
+        function activate(id) {
+            $('a').removeClass('active');
+            $(id).addClass('active');
+        }
+
+        function setFreehandColor(toolInstanceData) {
+            toolInstanceData.id = Math.round(Math.random()*1000);
+            toolInstanceData.color = "rgb("+
+                Math.round(Math.random()*255)+","+
+                Math.round(Math.random()*255)+","+
+                Math.round(Math.random()*255)+")";
+        }
+
         cornerstone.displayImage(element, image);
         cornerstoneTools.mouseInput.enable(element);
 
         // Enable all tools we want to use with this element
         cornerstoneTools.freehand.activate(element, 1);
 
-        activate("#activate");
+        var freehandConfig = cornerstoneTools.freehand.getConfiguration();
+        freehandConfig.callbacks.onStartDrawing = setFreehandColor;
+        freehandConfig.callbacks.onEndDrawing = ((toolInstanceData) => console.log("Done drawing #"+toolInstanceData.id));
+        cornerstoneTools.freehand.setConfiguration(freehandConfig);
 
-        function activate(id)
-        {
-            $('a').removeClass('active');
-            $(id).addClass('active');
-        }
+        activate("#activate");
 
         // Tool button event handlers that set the new active tool
         $('#disable').click(function() {
@@ -127,6 +152,12 @@ is used by our example image loader-->
         $('#deactivate').click(function() {
             activate("#deactivate");
             cornerstoneTools.freehand.deactivate(element, 1);
+            return false;
+        });
+    
+        $('#randomize').click(function() {
+            randomize();
+            cornerstone.updateImage(element);
             return false;
         });
 
