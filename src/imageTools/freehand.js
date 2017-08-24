@@ -197,6 +197,8 @@ function startDrawing (eventData) {
   $(eventData.element).on('CornerstoneToolsMouseUp', mouseUpCallback);
 
   const measurementData = {
+    color: undefined,
+    showMe: true,
     visible: true,
     active: true,
     handles: []
@@ -325,12 +327,24 @@ function onImageRendered (e, eventData) {
 
     const data = toolData.data[i];
 
-    if (data.active) {
-      color = toolColors.getActiveColor();
-      fillColor = toolColors.getFillColor();
+    if (data.show === false) {
+      // If showMe is false, don't draw the roi at all.
+      continue;
+    }
+
+
+    if (data.color !== undefined) {
+      // Use the roi-specific color instead of defaults.
+      color = data.color;
+      fillColor = data.fillColor;
     } else {
-      color = toolColors.getToolColor();
-      fillColor = toolColors.getToolColor();
+      if (data.active) {
+        color = toolColors.getActiveColor();
+        fillColor = toolColors.getFillColor();
+      } else {
+        color = toolColors.getToolColor();
+        fillColor = toolColors.getToolColor();
+      }
     }
 
     let handleStart;
@@ -366,16 +380,17 @@ function onImageRendered (e, eventData) {
       }
     }
 
-        // If the tool is active, draw a handle at the cursor location
+    // If the tool is active, draw a handle at the cursor location
     const options = {
       fill: fillColor
     };
 
     if (data.active) {
       drawHandles(context, eventData, config.mouseLocation.handles, color, options);
+
+      // Only draw the vertices if this is the active contour.
+      drawHandles(context, eventData, data.handles, color, options);
     }
-        // Draw the handles
-    drawHandles(context, eventData, data.handles, color, options);
 
     context.restore();
   }

@@ -1,4 +1,4 @@
-/*! cornerstone-tools - 0.9.0 - 2017-06-28 | (c) 2017 Chris Hafey | https://github.com/chafey/cornerstoneTools */
+/*! cornerstone-tools - 0.9.0 - 2017-08-24 | (c) 2017 Chris Hafey | https://github.com/chafey/cornerstoneTools */
 (function webpackUniversalModuleDefinition(root, factory) {
 	if(typeof exports === 'object' && typeof module === 'object')
 		module.exports = factory(require("cornerstone-core"), require("cornerstone-math"), require("hammerjs"));
@@ -6504,6 +6504,8 @@ function startDrawing(eventData) {
   $(eventData.element).on('CornerstoneToolsMouseUp', mouseUpCallback);
 
   var measurementData = {
+    color: undefined,
+    showMe: true,
     visible: true,
     active: true,
     handles: []
@@ -6633,12 +6635,23 @@ function onImageRendered(e, eventData) {
 
     var data = toolData.data[i];
 
-    if (data.active) {
-      color = _toolColors2.default.getActiveColor();
-      fillColor = _toolColors2.default.getFillColor();
+    if (data.show === false) {
+      // If showMe is false, don't draw the roi at all.
+      continue;
+    }
+
+    if (data.color !== undefined) {
+      // Use the roi-specific color instead of defaults.
+      color = data.color;
+      fillColor = data.fillColor;
     } else {
-      color = _toolColors2.default.getToolColor();
-      fillColor = _toolColors2.default.getToolColor();
+      if (data.active) {
+        color = _toolColors2.default.getActiveColor();
+        fillColor = _toolColors2.default.getFillColor();
+      } else {
+        color = _toolColors2.default.getToolColor();
+        fillColor = _toolColors2.default.getToolColor();
+      }
     }
 
     var handleStart = void 0;
@@ -6681,9 +6694,10 @@ function onImageRendered(e, eventData) {
 
     if (data.active) {
       (0, _drawHandles2.default)(context, eventData, config.mouseLocation.handles, color, options);
+
+      // Only draw the vertices if this is the active contour.
+      (0, _drawHandles2.default)(context, eventData, data.handles, color, options);
     }
-    // Draw the handles
-    (0, _drawHandles2.default)(context, eventData, data.handles, color, options);
 
     context.restore();
   }
@@ -11001,7 +11015,10 @@ function mouseDown(e) {
       lastPoints: lastPoints,
       currentPoints: currentPoints,
       deltaPoints: deltaPoints,
-      type: eventType
+      type: eventType,
+      ctrlKey: e.ctrlKey,
+      metaKey: e.metaKey,
+      shiftKey: e.shiftKey
     };
 
     $(eventData.element).trigger(eventType, eventData);
