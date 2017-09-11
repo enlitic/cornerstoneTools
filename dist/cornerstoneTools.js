@@ -1,4 +1,4 @@
-/*! cornerstone-tools - 0.9.0 - 2017-08-24 | (c) 2017 Chris Hafey | https://github.com/chafey/cornerstoneTools */
+/*! cornerstone-tools - 0.9.0 - 2017-09-11 | (c) 2017 Chris Hafey | https://github.com/chafey/cornerstoneTools */
 (function webpackUniversalModuleDefinition(root, factory) {
 	if(typeof exports === 'object' && typeof module === 'object')
 		module.exports = factory(require("cornerstone-core"), require("cornerstone-math"), require("hammerjs"));
@@ -6343,6 +6343,11 @@ function addPoint(eventData) {
 
   var config = freehand.getConfiguration();
 
+  // When modifying element, do not add new points
+  if (config.modifying) {
+    return;
+  }
+
   // Get the toolData from the last-drawn drawing
   // (this should change when modification is added)
   var data = toolData.data[config.currentTool];
@@ -6516,6 +6521,12 @@ function startDrawing(eventData) {
   };
 
   var config = freehand.getConfiguration();
+
+  // When modifying, don't start a new ROI:
+  if (config.modifying) {
+    endDrawing(eventData);
+    return;
+  }
 
   config.mouseLocation.handles.start.x = eventData.currentPoints.image.x;
   config.mouseLocation.handles.start.y = eventData.currentPoints.image.y;

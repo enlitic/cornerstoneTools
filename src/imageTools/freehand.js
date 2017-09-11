@@ -38,6 +38,7 @@ function addPoint (eventData) {
 
     // When modifying element, do not add new points
     if (config.modifying) {
+        console.log("Hittin it!")
         return;
     }
 
@@ -217,6 +218,7 @@ function startDrawing (eventData) {
 
   // When modifying, don't start a new ROI:
   if (config.modifying) {
+      console.log("Hittin it!")
       endDrawing(eventData);
       return;
   }
