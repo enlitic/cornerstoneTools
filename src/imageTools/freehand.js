@@ -216,9 +216,9 @@ function startDrawing (eventData) {
 
   const config = freehand.getConfiguration();
 
+  console.log("startDrawing!", config)
   // When modifying, don't start a new ROI:
   if (config.modifying) {
-      console.log("Hittin it!")
       endDrawing(eventData);
       return;
   }
