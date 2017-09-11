@@ -36,6 +36,11 @@ function addPoint (eventData) {
 
   const config = freehand.getConfiguration();
 
+    // When modifying element, do not add new points
+    if (config.modifying) {
+        return;
+    }
+
     // Get the toolData from the last-drawn drawing
     // (this should change when modification is added)
   const data = toolData.data[config.currentTool];
@@ -209,6 +214,12 @@ function startDrawing (eventData) {
   };
 
   const config = freehand.getConfiguration();
+
+  // When modifying, don't start a new ROI:
+  if (config.modifying) {
+      endDrawing(eventData);
+      return;
+  }
 
   config.mouseLocation.handles.start.x = eventData.currentPoints.image.x;
   config.mouseLocation.handles.start.y = eventData.currentPoints.image.y;
