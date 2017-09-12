@@ -1,4 +1,4 @@
-/*! cornerstone-tools - 0.9.0 - 2017-08-24 | (c) 2017 Chris Hafey | https://github.com/chafey/cornerstoneTools */
+/*! cornerstone-tools - 0.9.0 - 2017-09-12 | (c) 2017 Chris Hafey | https://github.com/chafey/cornerstoneTools */
 (function webpackUniversalModuleDefinition(root, factory) {
 	if(typeof exports === 'object' && typeof module === 'object')
 		module.exports = factory(require("cornerstone-core"), require("cornerstone-math"), require("hammerjs"));
@@ -6335,6 +6335,7 @@ var configuration = {
 
 // /////// BEGIN ACTIVE TOOL ///////
 function addPoint(eventData) {
+  console.log("addPoint Function called");
   var toolData = (0, _toolState.getToolState)(eventData.element, toolType);
 
   if (toolData === undefined) {
@@ -6375,6 +6376,7 @@ function addPoint(eventData) {
 }
 
 function pointNearHandle(eventData, toolIndex) {
+  console.log("pointNearHandle Function called");
   var toolData = (0, _toolState.getToolState)(eventData.element, toolType);
 
   if (toolData === undefined) {
@@ -6401,6 +6403,7 @@ function pointNearHandle(eventData, toolIndex) {
 }
 
 function pointNearHandleAllTools(eventData) {
+  console.log("pointNearHandleAllTools Function called");
   var toolData = (0, _toolState.getToolState)(eventData.element, toolType);
 
   if (!toolData) {
@@ -6428,6 +6431,7 @@ function pointNearHandleAllTools(eventData) {
 // On each click, if it intersects with a current point, end drawing loop
 
 function mouseUpCallback(e, eventData) {
+  console.log("mouseUpCallback Function called");
   $(eventData.element).off('CornerstoneToolsMouseUp', mouseUpCallback);
 
   // Check if drawing is finished
@@ -6447,6 +6451,7 @@ function mouseUpCallback(e, eventData) {
 }
 
 function mouseMoveCallback(e, eventData) {
+  console.log("mouseMoveCallback Function called");
   var toolData = (0, _toolState.getToolState)(eventData.element, toolType);
 
   if (!toolData) {
@@ -6504,6 +6509,7 @@ function mouseMoveCallback(e, eventData) {
 }
 
 function startDrawing(eventData) {
+  console.log("startDrawing Function called");
   $(eventData.element).on('CornerstoneToolsMouseMove', mouseMoveCallback);
   $(eventData.element).on('CornerstoneToolsMouseUp', mouseUpCallback);
 
@@ -6534,6 +6540,7 @@ function startDrawing(eventData) {
 }
 
 function endDrawing(eventData, handleNearby) {
+  console.log("endDrawing Function called");
   var toolData = (0, _toolState.getToolState)(eventData.element, toolType);
 
   if (!toolData) {
@@ -6574,6 +6581,7 @@ function endDrawing(eventData, handleNearby) {
 }
 
 function mouseDownCallback(e, eventData) {
+  console.log("mouseDownCallback Function called");
   if ((0, _isMouseButtonEnabled2.default)(eventData.which, e.data.mouseButtonMask)) {
     var toolData = (0, _toolState.getToolState)(eventData.element, toolType);
 
@@ -6626,6 +6634,7 @@ function mouseDownCallback(e, eventData) {
 
 // /////// BEGIN IMAGE RENDERING ///////
 function onImageRendered(e, eventData) {
+  console.log("onImageRendered Function called");
   // If we have no toolData for this element, return immediately as there is nothing to do
   var toolData = (0, _toolState.getToolState)(e.currentTarget, toolType);
 
@@ -6718,6 +6727,7 @@ function onImageRendered(e, eventData) {
 }
 // /////// END IMAGE RENDERING ///////
 function enable(element) {
+  console.log("enable Function called");
   $(element).off('CornerstoneToolsMouseDown', mouseDownCallback);
   $(element).off('CornerstoneToolsMouseUp', mouseUpCallback);
   $(element).off('CornerstoneToolsMouseMove', mouseMoveCallback);
@@ -6729,6 +6739,7 @@ function enable(element) {
 
 // Disables the reference line tool for the given element
 function disable(element) {
+  console.log("disable Function called");
   $(element).off('CornerstoneToolsMouseDown', mouseDownCallback);
   $(element).off('CornerstoneToolsMouseUp', mouseUpCallback);
   $(element).off('CornerstoneToolsMouseMove', mouseMoveCallback);
@@ -6738,6 +6749,7 @@ function disable(element) {
 
 // Visible and interactive
 function activate(element, mouseButtonMask) {
+  console.log("activate Function called");
   var eventData = {
     mouseButtonMask: mouseButtonMask
   };
@@ -6755,6 +6767,7 @@ function activate(element, mouseButtonMask) {
 
 // Visible, but not interactive
 function deactivate(element) {
+  console.log("deactivate Function called");
   $(element).off('CornerstoneToolsMouseDown', mouseDownCallback);
   $(element).off('CornerstoneToolsMouseUp', mouseUpCallback);
   $(element).off('CornerstoneToolsMouseMove', mouseMoveCallback);
