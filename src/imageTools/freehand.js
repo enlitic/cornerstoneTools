@@ -29,7 +29,6 @@ let configuration = {
 // /////// BEGIN ACTIVE TOOL ///////
 function addPoint (eventData) {
   const toolData = getToolState(eventData.element, toolType);
-  console.log("addPoint Function toolData", toolData)
 
   if (toolData === undefined) {
     return;
@@ -69,7 +68,6 @@ function addPoint (eventData) {
 }
 
 function pointNearHandle (eventData, toolIndex) {
-  console.log("pointNearHandle Function called")
   const toolData = getToolState(eventData.element, toolType);
 
   if (toolData === undefined) {
@@ -96,7 +94,6 @@ function pointNearHandle (eventData, toolIndex) {
 }
 
 function pointNearHandleAllTools (eventData) {
-  console.log("pointNearHandleAllTools Function called")
   const toolData = getToolState(eventData.element, toolType);
 
   if (!toolData) {
@@ -213,8 +210,6 @@ function startDrawing (eventData) {
 
   const config = freehand.getConfiguration();
 
-  console.log("startDrawing Function called")
-  console.log("startDrawing config", config)
   config.mouseLocation.handles.start.x = eventData.currentPoints.image.x;
   config.mouseLocation.handles.start.y = eventData.currentPoints.image.y;
 
@@ -280,8 +275,6 @@ function mouseDownCallback (e, eventData) {
     const config = freehand.getConfiguration();
     const currentTool = config.currentTool;
 
-    console.log("mouseDownCallback Function called, config:", config)
-    console.log("mouseDownCallback, currentTool:", currentTool)
     if (config.modifying) {
       endDrawing(eventData);
 
@@ -303,12 +296,12 @@ function mouseDownCallback (e, eventData) {
           config.currentTool = toolIndex;
         }
       } else {
-        console.log("mouseDownCallback calling startDrawing and addPoint")
-        console.log("mouseDownCallback calling s and a, currentTool", currentTool)
-        console.log("mouseDownCallback calling s and a, config", config)
-        startDrawing(eventData);
-        addPoint(eventData);
+        if(config.modifying !== 0) {
+          startDrawing(eventData);
+          addPoint(eventData);
+        }
       }
+      // below is for active drawing and dropping points.
     } else if (currentTool >= 0 && toolData.data[currentTool].active) {
       handleNearby = pointNearHandle(eventData, currentTool);
       if (handleNearby !== undefined) {
@@ -421,7 +414,6 @@ function onImageRendered (e, eventData) {
 }
 // /////// END IMAGE RENDERING ///////
 function enable (element) {
-  console.log("enable Function called")
   $(element).off('CornerstoneToolsMouseDown', mouseDownCallback);
   $(element).off('CornerstoneToolsMouseUp', mouseUpCallback);
   $(element).off('CornerstoneToolsMouseMove', mouseMoveCallback);
@@ -433,7 +425,6 @@ function enable (element) {
 
 // Disables the reference line tool for the given element
 function disable (element) {
-  console.log("disable Function called")
   $(element).off('CornerstoneToolsMouseDown', mouseDownCallback);
   $(element).off('CornerstoneToolsMouseUp', mouseUpCallback);
   $(element).off('CornerstoneToolsMouseMove', mouseMoveCallback);
@@ -443,7 +434,6 @@ function disable (element) {
 
 // Visible and interactive
 function activate (element, mouseButtonMask) {
-  console.log("activate Function called")
   const eventData = {
     mouseButtonMask
   };
@@ -461,7 +451,6 @@ function activate (element, mouseButtonMask) {
 
 // Visible, but not interactive
 function deactivate (element) {
-  console.log("deactivate Function called")
   $(element).off('CornerstoneToolsMouseDown', mouseDownCallback);
   $(element).off('CornerstoneToolsMouseUp', mouseUpCallback);
   $(element).off('CornerstoneToolsMouseMove', mouseMoveCallback);
