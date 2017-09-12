@@ -28,8 +28,8 @@ let configuration = {
 
 // /////// BEGIN ACTIVE TOOL ///////
 function addPoint (eventData) {
-  console.log("addPoint Function called")
   const toolData = getToolState(eventData.element, toolType);
+  console.log("addPoint Function toolData", toolData)
 
   if (toolData === undefined) {
     return;
@@ -124,7 +124,6 @@ function pointNearHandleAllTools (eventData) {
 // On each click, if it intersects with a current point, end drawing loop
 
 function mouseUpCallback (e, eventData) {
-  console.log("mouseUpCallback Function called")
   $(eventData.element).off('CornerstoneToolsMouseUp', mouseUpCallback);
 
     // Check if drawing is finished
@@ -144,7 +143,6 @@ function mouseUpCallback (e, eventData) {
 }
 
 function mouseMoveCallback (e, eventData) {
-  console.log("mouseMoveCallback Function called")
   const toolData = getToolState(eventData.element, toolType);
 
   if (!toolData) {
@@ -202,7 +200,6 @@ function mouseMoveCallback (e, eventData) {
 }
 
 function startDrawing (eventData) {
-  console.log("startDrawing Function called")
   $(eventData.element).on('CornerstoneToolsMouseMove', mouseMoveCallback);
   $(eventData.element).on('CornerstoneToolsMouseUp', mouseUpCallback);
 
@@ -216,6 +213,8 @@ function startDrawing (eventData) {
 
   const config = freehand.getConfiguration();
 
+  console.log("startDrawing Function called")
+  console.log("startDrawing config", config)
   config.mouseLocation.handles.start.x = eventData.currentPoints.image.x;
   config.mouseLocation.handles.start.y = eventData.currentPoints.image.y;
 
@@ -233,7 +232,6 @@ function startDrawing (eventData) {
 }
 
 function endDrawing (eventData, handleNearby) {
-  console.log("endDrawing Function called")
   const toolData = getToolState(eventData.element, toolType);
 
   if (!toolData) {
@@ -274,7 +272,6 @@ function endDrawing (eventData, handleNearby) {
 }
 
 function mouseDownCallback (e, eventData) {
-  console.log("mouseDownCallback Function called")
   if (isMouseButtonEnabled(eventData.which, e.data.mouseButtonMask)) {
     const toolData = getToolState(eventData.element, toolType);
 
@@ -283,6 +280,8 @@ function mouseDownCallback (e, eventData) {
     const config = freehand.getConfiguration();
     const currentTool = config.currentTool;
 
+    console.log("mouseDownCallback Function called, config:", config)
+    console.log("mouseDownCallback, currentTool:", currentTool)
     if (config.modifying) {
       endDrawing(eventData);
 
@@ -304,6 +303,9 @@ function mouseDownCallback (e, eventData) {
           config.currentTool = toolIndex;
         }
       } else {
+        console.log("mouseDownCallback calling startDrawing and addPoint")
+        console.log("mouseDownCallback calling s and a, currentTool", currentTool)
+        console.log("mouseDownCallback calling s and a, config", config)
         startDrawing(eventData);
         addPoint(eventData);
       }
@@ -326,7 +328,6 @@ function mouseDownCallback (e, eventData) {
 
 // /////// BEGIN IMAGE RENDERING ///////
 function onImageRendered (e, eventData) {
-  console.log("onImageRendered Function called")
     // If we have no toolData for this element, return immediately as there is nothing to do
   const toolData = getToolState(e.currentTarget, toolType);
 
