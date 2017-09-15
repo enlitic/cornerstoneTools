@@ -105,7 +105,7 @@ is used by our example image loader-->
     }
 
     // Image loading events are bound to the cornerstone object, not the element
-    $(cornerstone).on("CornerstoneImageLoaded", onImageLoaded);
+    $(cornerstone.events).on("CornerstoneImageLoaded", onImageLoaded);
 
     // image enable the dicomImage element and the mouse inputs
     console.time("Loading");
@@ -126,7 +126,7 @@ is used by our example image loader-->
 
         // Uncomment below to enable stack prefetching
         // With the example images the loading will be extremely quick, though
-        // cornerstoneTools.stackPrefetch.enable(element, 3);
+        cornerstoneTools.stackPrefetch.enable(element, 3);
     });
 
 </script>

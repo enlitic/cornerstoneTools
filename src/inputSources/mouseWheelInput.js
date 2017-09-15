@@ -1,84 +1,89 @@
-(function($, cornerstone, cornerstoneTools) {
+import * as cornerstone from 'cornerstone-core';
 
-    'use strict';
+function mouseWheel (e) {
+    // !!!HACK/NOTE/WARNING!!!
+    // For some reason I am getting mousewheel and DOMMouseScroll events on my
+    // Mac os x mavericks system when middle mouse button dragging.
+    // I couldn't find any info about this so this might break other systems
+    // Webkit hack
+  if (e.originalEvent.type === 'mousewheel' && e.originalEvent.wheelDeltaY === 0) {
+    return;
+  }
+    // Firefox hack
+  if (e.originalEvent.type === 'DOMMouseScroll' && e.originalEvent.axis === 1) {
+    return;
+  }
 
-    var scrollTimeout;
-    var scrollTimeoutDelay = 1;
+  e.preventDefault();
 
-    function mouseWheel(e) {
-        clearTimeout(scrollTimeout);
+  const element = e.currentTarget;
 
-        scrollTimeout = setTimeout(function() {
-            // !!!HACK/NOTE/WARNING!!!
-            // for some reason I am getting mousewheel and DOMMouseScroll events on my
-            // mac os x mavericks system when middle mouse button dragging.
-            // I couldn't find any info about this so this might break other systems
-            // webkit hack
-            if (e.originalEvent.type === 'mousewheel' && e.originalEvent.wheelDeltaY === 0) {
-                return;
-            }
-            // firefox hack
-            if (e.originalEvent.type === 'DOMMouseScroll' && e.originalEvent.axis === 1) {
-                return;
-            }
+  let x;
+  let y;
 
-            var element = e.currentTarget;
+  if (e.pageX !== undefined && e.pageY !== undefined) {
+    x = e.pageX;
+    y = e.pageY;
+  } else if (e.originalEvent &&
+               e.originalEvent.pageX !== undefined &&
+               e.originalEvent.pageY !== undefined) {
+    x = e.originalEvent.pageX;
+    y = e.originalEvent.pageY;
+  } else {
+        // IE9 & IE10
+    x = e.x;
+    y = e.y;
+  }
 
-            var x;
-            var y;
+  const startingCoords = cornerstone.pageToPixel(element, x, y);
 
-            if (e.pageX !== undefined && e.pageY !== undefined) {
-                x = e.pageX;
-                y = e.pageY;
-            } else if (e.originalEvent &&
-                       e.originalEvent.pageX !== undefined &&
-                       e.originalEvent.pageY !== undefined) {
-                x = e.originalEvent.pageX;
-                y = e.originalEvent.pageY;
-            } else {
-                // IE9 & IE10
-                x = e.x;
-                y = e.y;
-            }
+  e = window.event || e; // Old IE support
 
-            var startingCoords = cornerstone.pageToPixel(element, x, y);
+  let wheelDelta;
 
-            e = window.event || e; // old IE support
-            var wheelDelta = e.wheelDelta || -e.detail || -e.originalEvent.detail || -e.originalEvent.deltaY;
-            var direction = Math.max(-1, Math.min(1, (wheelDelta)));
+  if (e.originalEvent && e.originalEvent.wheelDelta) {
+    wheelDelta = -e.originalEvent.wheelDelta;
+  } else if (e.originalEvent && e.originalEvent.deltaY) {
+    wheelDelta = -e.originalEvent.deltaY;
+  } else if (e.originalEvent && e.originalEvent.detail) {
+    wheelDelta = -e.originalEvent.detail;
+  } else {
+    wheelDelta = e.wheelDelta;
+  }
 
-            var mouseWheelData = {
-                element: element,
-                viewport: cornerstone.getViewport(element),
-                image: cornerstone.getEnabledElement(element).image,
-                direction: direction,
-                pageX: x,
-                pageY: y,
-                imageX: startingCoords.x,
-                imageY: startingCoords.y
-            };
+  const direction = wheelDelta < 0 ? -1 : 1;
 
-            $(element).trigger('CornerstoneToolsMouseWheel', mouseWheelData);
-        }, scrollTimeoutDelay);
-    }
+  const mouseWheelData = {
+    element,
+    viewport: cornerstone.getViewport(element),
+    image: cornerstone.getEnabledElement(element).image,
+    direction,
+    pageX: x,
+    pageY: y,
+    imageX: startingCoords.x,
+    imageY: startingCoords.y
+  };
 
-    var mouseWheelEvents = 'mousewheel DOMMouseScroll';
+  $(element).trigger('CornerstoneToolsMouseWheel', mouseWheelData);
+}
 
-    function enable(element) {
-        // Prevent handlers from being attached multiple times
-        disable(element);
-        
-        $(element).on(mouseWheelEvents, mouseWheel);
-    }
+const mouseWheelEvents = 'mousewheel DOMMouseScroll';
 
-    function disable(element) {
-        $(element).unbind(mouseWheelEvents, mouseWheel);
-    }
+function enable (element) {
+    // Prevent handlers from being attached multiple times
+  disable(element);
 
-    // module exports
-    cornerstoneTools.mouseWheelInput = {
-        enable: enable,
-        disable: disable
-    };
+  $(element).on(mouseWheelEvents, mouseWheel);
+}
 
-})($, cornerstone, cornerstoneTools);
+function disable (element) {
+  $(element).unbind(mouseWheelEvents, mouseWheel);
+}
+
+// Module exports
+const mouseWheelInput = {
+  enable,
+  disable
+};
+
+export default mouseWheelInput;

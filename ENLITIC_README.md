@@ -9,5 +9,3 @@ In order to deploy a new version of cornerstoneTools into superPacs, the followi
     "cornerstoneTools": "git://github.com/enlitic/cornerstoneTools#0.X.X"
 
 6. commit and push that change.
-
-    
