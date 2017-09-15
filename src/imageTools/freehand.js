@@ -296,9 +296,12 @@ function mouseDownCallback (e, eventData) {
           config.currentTool = toolIndex;
         }
       } else {
-        startDrawing(eventData);
-        addPoint(eventData);
+        if(config.modifying !== 0) {
+          startDrawing(eventData);
+          addPoint(eventData);
+        }
       }
+      // below is for active drawing and dropping points.
     } else if (currentTool >= 0 && toolData.data[currentTool].active) {
       handleNearby = pointNearHandle(eventData, currentTool);
       if (handleNearby !== undefined) {

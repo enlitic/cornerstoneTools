@@ -1,4 +1,4 @@
-/*! cornerstone-tools - 0.9.0 - 2017-08-24 | (c) 2017 Chris Hafey | https://github.com/chafey/cornerstoneTools */
+/*! cornerstone-tools - 0.9.0 - 2017-09-12 | (c) 2017 Chris Hafey | https://github.com/chafey/cornerstoneTools */
 (function webpackUniversalModuleDefinition(root, factory) {
 	if(typeof exports === 'object' && typeof module === 'object')
 		module.exports = factory(require("cornerstone-core"), require("cornerstone-math"), require("hammerjs"));
@@ -6604,9 +6604,12 @@ function mouseDownCallback(e, eventData) {
           config.currentTool = toolIndex;
         }
       } else {
-        startDrawing(eventData);
-        addPoint(eventData);
+        if (config.modifying !== 0) {
+          startDrawing(eventData);
+          addPoint(eventData);
+        }
       }
+      // below is for active drawing and dropping points.
     } else if (currentTool >= 0 && toolData.data[currentTool].active) {
       handleNearby = pointNearHandle(eventData, currentTool);
       if (handleNearby !== undefined) {
