@@ -1,23 +1,19 @@
-export default function (touchPinchCallback) {
-  const toolInterface = {
-    activate (element) {
-      $(element).off('CornerstoneToolsTouchPinch', touchPinchCallback);
-      const eventData = {
-      };
+import EVENTS from '../events.js';
 
-      $(element).on('CornerstoneToolsTouchPinch', eventData, touchPinchCallback);
+export default function (touchPinchCallback) {
+  return {
+    activate (element) {
+      element.removeEventListener(EVENTS.TOUCH_PINCH, touchPinchCallback);
+      element.addEventListener(EVENTS.TOUCH_PINCH, touchPinchCallback);
     },
     disable (element) {
-      $(element).off('CornerstoneToolsTouchPinch', touchPinchCallback);
+      element.removeEventListener(EVENTS.TOUCH_PINCH, touchPinchCallback);
     },
     enable (element) {
-      $(element).off('CornerstoneToolsTouchPinch', touchPinchCallback);
+      element.removeEventListener(EVENTS.TOUCH_PINCH, touchPinchCallback);
     },
     deactivate (element) {
-      $(element).off('CornerstoneToolsTouchPinch', touchPinchCallback);
+      element.removeEventListener(EVENTS.TOUCH_PINCH, touchPinchCallback);
     }
   };
-
-
-  return toolInterface;
 }

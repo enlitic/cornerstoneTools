@@ -1,16 +1,18 @@
-import * as cornerstone from 'cornerstone-core';
+
+import EVENTS from '../events.js';
+import external from '../externalModules.js';
 
 export default function (onImageRendered) {
   let configuration = {};
 
-  const toolInterface = {
+  return {
     disable (element) {
-      $(element).off('CornerstoneImageRendered', onImageRendered);
+      element.removeEventListener(EVENTS.IMAGE_RENDERED, onImageRendered);
     },
     enable (element) {
-      $(element).off('CornerstoneImageRendered', onImageRendered);
-      $(element).on('CornerstoneImageRendered', onImageRendered);
-      cornerstone.updateImage(element);
+      element.removeEventListener(EVENTS.IMAGE_RENDERED, onImageRendered);
+      element.addEventListener(EVENTS.IMAGE_RENDERED, onImageRendered);
+      external.cornerstone.updateImage(element);
     },
     getConfiguration () {
       return configuration;
@@ -19,6 +21,4 @@ export default function (onImageRendered) {
       configuration = config;
     }
   };
-
-  return toolInterface;
 }

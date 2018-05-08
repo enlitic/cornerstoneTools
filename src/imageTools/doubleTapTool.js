@@ -1,22 +1,19 @@
-export default function (doubleTapCallback) {
-  const toolInterface = {
-    activate (element) {
-      $(element).off('CornerstoneToolsDoubleTap', doubleTapCallback);
-      const eventData = {};
+import EVENTS from '../events.js';
 
-      $(element).on('CornerstoneToolsDoubleTap', eventData, doubleTapCallback);
+export default function (doubleTapCallback) {
+  return {
+    activate (element) {
+      element.removeEventListener(EVENTS.DOUBLE_TAP, doubleTapCallback);
+      element.addEventListener(EVENTS.DOUBLE_TAP, doubleTapCallback);
     },
     disable (element) {
-      $(element).off('CornerstoneToolsDoubleTap', doubleTapCallback);
+      element.removeEventListener(EVENTS.DOUBLE_TAP, doubleTapCallback);
     },
     enable (element) {
-      $(element).off('CornerstoneToolsDoubleTap', doubleTapCallback);
+      element.removeEventListener(EVENTS.DOUBLE_TAP, doubleTapCallback);
     },
     deactivate (element) {
-      $(element).off('CornerstoneToolsDoubleTap', doubleTapCallback);
+      element.removeEventListener(EVENTS.DOUBLE_TAP, doubleTapCallback);
     }
   };
-
-
-  return toolInterface;
 }

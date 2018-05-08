@@ -1,24 +1,29 @@
-export default function (mouseDownCallback) {
+import EVENTS from '../events.js';
+import { setToolOptions } from '../toolOptions.js';
+
+export default function (mouseDownCallback, toolType) {
+  if (!toolType) {
+    throw new Error('simpleMouseButtonTool: toolType is required');
+  }
+
   let configuration = {};
 
-  const toolInterface = {
-    activate (element, mouseButtonMask, options) {
-      $(element).off('CornerstoneToolsMouseDownActivate', mouseDownCallback);
-      const eventData = {
-        mouseButtonMask,
-        options
-      };
+  return {
+    activate (element, mouseButtonMask, options = {}) {
+      options.mouseButtonMask = mouseButtonMask;
+      setToolOptions(toolType, element, options);
 
-      $(element).on('CornerstoneToolsMouseDownActivate', eventData, mouseDownCallback);
+      element.removeEventListener(EVENTS.MOUSE_DOWN_ACTIVATE, mouseDownCallback);
+      element.addEventListener(EVENTS.MOUSE_DOWN_ACTIVATE, mouseDownCallback);
     },
     disable (element) {
-      $(element).off('CornerstoneToolsMouseDownActivate', mouseDownCallback);
+      element.removeEventListener(EVENTS.MOUSE_DOWN_ACTIVATE, mouseDownCallback);
     },
     enable (element) {
-      $(element).off('CornerstoneToolsMouseDownActivate', mouseDownCallback);
+      element.removeEventListener(EVENTS.MOUSE_DOWN_ACTIVATE, mouseDownCallback);
     },
     deactivate (element) {
-      $(element).off('CornerstoneToolsMouseDownActivate', mouseDownCallback);
+      element.removeEventListener(EVENTS.MOUSE_DOWN_ACTIVATE, mouseDownCallback);
     },
     getConfiguration () {
       return configuration;
@@ -27,7 +32,4 @@ export default function (mouseDownCallback) {
       configuration = config;
     }
   };
-
-
-  return toolInterface;
 }

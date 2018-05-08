@@ -1,23 +1,19 @@
-export default function (mouseWheelCallback) {
-  const toolInterface = {
-    activate (element) {
-      $(element).off('CornerstoneToolsMouseWheel', mouseWheelCallback);
-      const eventData = {
-      };
+import EVENTS from '../events.js';
 
-      $(element).on('CornerstoneToolsMouseWheel', eventData, mouseWheelCallback);
+export default function (mouseWheelCallback) {
+  return {
+    activate (element) {
+      element.removeEventListener(EVENTS.MOUSE_WHEEL, mouseWheelCallback);
+      element.addEventListener(EVENTS.MOUSE_WHEEL, mouseWheelCallback);
     },
     disable (element) {
-      $(element).off('CornerstoneToolsMouseWheel', mouseWheelCallback);
+      element.removeEventListener(EVENTS.MOUSE_WHEEL, mouseWheelCallback);
     },
     enable (element) {
-      $(element).off('CornerstoneToolsMouseWheel', mouseWheelCallback);
+      element.removeEventListener(EVENTS.MOUSE_WHEEL, mouseWheelCallback);
     },
     deactivate (element) {
-      $(element).off('CornerstoneToolsMouseWheel', mouseWheelCallback);
+      element.removeEventListener(EVENTS.MOUSE_WHEEL, mouseWheelCallback);
     }
   };
-
-
-  return toolInterface;
 }

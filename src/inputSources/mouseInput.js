@@ -1,26 +1,47 @@
-import * as cornerstone from 'cornerstone-core';
-import * as cornerstoneMath from 'cornerstone-math';
+import EVENTS from '../events.js';
+import external from '../externalModules.js';
 import copyPoints from '../util/copyPoints.js';
-import pauseEvent from '../util/pauseEvent.js';
+import triggerEvent from '../util/triggerEvent.js';
 
 let isClickEvent = true;
 let preventClickTimeout;
 const clickDelay = 200;
 
+function getEventWhich (event) {
+  if (typeof event.buttons !== 'number') {
+    return event.which;
+  }
+
+  if (event.buttons === 0) {
+    return 0;
+  } else if (event.buttons % 2 === 1) {
+    return 1;
+  } else if (event.buttons % 4 === 2) {
+    return 3;
+  } else if (event.buttons % 8 === 4) {
+    return 2;
+  }
+
+  return 0;
+}
+
 function preventClickHandler () {
   isClickEvent = false;
 }
 
-function activateMouseDown (mouseEventDetail) {
-  $(mouseEventDetail.element).trigger('CornerstoneToolsMouseDownActivate', mouseEventDetail);
-}
-
 function mouseDoubleClick (e) {
+  const cornerstone = external.cornerstone;
   const element = e.currentTarget;
-  const eventType = 'CornerstoneToolsMouseDoubleClick';
+  const enabledElement = cornerstone.getEnabledElement(element);
+
+  if (!enabledElement.image) {
+    return;
+  }
+
+  const eventType = EVENTS.MOUSE_DOUBLE_CLICK;
 
   const startPoints = {
-    page: cornerstoneMath.point.pageToPoint(e),
+    page: external.cornerstoneMath.point.pageToPoint(e),
     image: cornerstone.pageToPixel(element, e.pageX, e.pageY),
     client: {
       x: e.clientX,
@@ -31,11 +52,20 @@ function mouseDoubleClick (e) {
   startPoints.canvas = cornerstone.pixelToCanvas(element, startPoints.image);
 
   const lastPoints = copyPoints(startPoints);
+
+
+  /* Note: It seems we can't trust MouseEvent.buttons for dblclick events?
+
+    For some reason they are always firing with e.buttons = 0
+    so we have to use e.which for now instead.
+
+    Might be related to using preventDefault on the original mousedown or click events?
+  */
   const eventData = {
     event: e,
     which: e.which,
     viewport: cornerstone.getViewport(element),
-    image: cornerstone.getEnabledElement(element).image,
+    image: enabledElement.image,
     element,
     startPoints,
     lastPoints,
@@ -47,22 +77,27 @@ function mouseDoubleClick (e) {
     type: eventType
   };
 
-  const event = $.Event(eventType, eventData);
-
-  $(eventData.element).trigger(event, eventData);
+  triggerEvent(element, eventType, eventData);
 }
 
 function mouseDown (e) {
+  const cornerstone = external.cornerstone;
+  const element = e.currentTarget;
+  const enabledElement = cornerstone.getEnabledElement(element);
+
+  if (!enabledElement.image) {
+    return;
+  }
+
   preventClickTimeout = setTimeout(preventClickHandler, clickDelay);
 
-  const element = e.currentTarget;
-  const eventType = 'CornerstoneToolsMouseDown';
+  const eventType = EVENTS.MOUSE_DOWN;
 
-    // Prevent CornerstoneToolsMouseMove while mouse is down
-  $(element).off('mousemove', mouseMove);
+  // Prevent CornerstoneToolsMouseMove while mouse is down
+  element.removeEventListener('mousemove', mouseMove);
 
   const startPoints = {
-    page: cornerstoneMath.point.pageToPoint(e),
+    page: external.cornerstoneMath.point.pageToPoint(e),
     image: cornerstone.pageToPixel(element, e.pageX, e.pageY),
     client: {
       x: e.clientX,
@@ -75,9 +110,9 @@ function mouseDown (e) {
   let lastPoints = copyPoints(startPoints);
   const eventData = {
     event: e,
-    which: e.which,
+    which: getEventWhich(e),
     viewport: cornerstone.getViewport(element),
-    image: cornerstone.getEnabledElement(element).image,
+    image: enabledElement.image,
     element,
     startPoints,
     lastPoints,
@@ -89,24 +124,21 @@ function mouseDown (e) {
     type: eventType
   };
 
-  const event = $.Event(eventType, eventData);
+  const eventPropagated = triggerEvent(eventData.element, eventType, eventData);
 
-  $(eventData.element).trigger(event, eventData);
-
-  if (event.isImmediatePropagationStopped() === false) {
-        // No tools responded to this event, give the active tool a chance
-    if (activateMouseDown(eventData) === true) {
-      return pauseEvent(e);
-    }
+  if (eventPropagated) {
+    // No tools responded to this event, create a new tool
+    eventData.type = EVENTS.MOUSE_DOWN_ACTIVATE;
+    triggerEvent(eventData.element, EVENTS.MOUSE_DOWN_ACTIVATE, eventData);
   }
 
-  const whichMouseButton = e.which;
+  const whichMouseButton = getEventWhich(e);
 
   function onMouseMove (e) {
-        // Calculate our current points in page and image coordinates
-    const eventType = 'CornerstoneToolsMouseDrag';
+    // Calculate our current points in page and image coordinates
+    const eventType = EVENTS.MOUSE_DRAG;
     const currentPoints = {
-      page: cornerstoneMath.point.pageToPoint(e),
+      page: external.cornerstoneMath.point.pageToPoint(e),
       image: cornerstone.pageToPixel(element, e.pageX, e.pageY),
       client: {
         x: e.clientX,
@@ -116,18 +148,18 @@ function mouseDown (e) {
 
     currentPoints.canvas = cornerstone.pixelToCanvas(element, currentPoints.image);
 
-        // Calculate delta values in page and image coordinates
+    // Calculate delta values in page and image coordinates
     const deltaPoints = {
-      page: cornerstoneMath.point.subtract(currentPoints.page, lastPoints.page),
-      image: cornerstoneMath.point.subtract(currentPoints.image, lastPoints.image),
-      client: cornerstoneMath.point.subtract(currentPoints.client, lastPoints.client),
-      canvas: cornerstoneMath.point.subtract(currentPoints.canvas, lastPoints.canvas)
+      page: external.cornerstoneMath.point.subtract(currentPoints.page, lastPoints.page),
+      image: external.cornerstoneMath.point.subtract(currentPoints.image, lastPoints.image),
+      client: external.cornerstoneMath.point.subtract(currentPoints.client, lastPoints.client),
+      canvas: external.cornerstoneMath.point.subtract(currentPoints.canvas, lastPoints.canvas)
     };
 
     const eventData = {
       which: whichMouseButton,
       viewport: cornerstone.getViewport(element),
-      image: cornerstone.getEnabledElement(element).image,
+      image: enabledElement.image,
       element,
       startPoints,
       lastPoints,
@@ -139,30 +171,27 @@ function mouseDown (e) {
       shiftKey: e.shiftKey
     };
 
-    $(eventData.element).trigger(eventType, eventData);
+    triggerEvent(eventData.element, eventType, eventData);
 
-        // Update the last points
+    // Update the last points
     lastPoints = copyPoints(currentPoints);
-
-        // Prevent left click selection of DOM elements
-    return pauseEvent(e);
   }
 
-    // Hook mouseup so we can unbind our event listeners
-    // When they stop dragging
+  // Hook mouseup so we can unbind our event listeners
+  // When they stop dragging
   function onMouseUp (e) {
-        // Cancel the timeout preventing the click event from triggering
+    // Cancel the timeout preventing the click event from triggering
     clearTimeout(preventClickTimeout);
 
-    let eventType = 'CornerstoneToolsMouseUp';
+    let eventType = EVENTS.MOUSE_UP;
 
     if (isClickEvent) {
-      eventType = 'CornerstoneToolsMouseClick';
+      eventType = EVENTS.MOUSE_CLICK;
     }
 
-        // Calculate our current points in page and image coordinates
+    // Calculate our current points in page and image coordinates
     const currentPoints = {
-      page: cornerstoneMath.point.pageToPoint(e),
+      page: external.cornerstoneMath.point.pageToPoint(e),
       image: cornerstone.pageToPixel(element, e.pageX, e.pageY),
       client: {
         x: e.clientX,
@@ -172,19 +201,19 @@ function mouseDown (e) {
 
     currentPoints.canvas = cornerstone.pixelToCanvas(element, currentPoints.image);
 
-        // Calculate delta values in page and image coordinates
+    // Calculate delta values in page and image coordinates
     const deltaPoints = {
-      page: cornerstoneMath.point.subtract(currentPoints.page, lastPoints.page),
-      image: cornerstoneMath.point.subtract(currentPoints.image, lastPoints.image),
-      client: cornerstoneMath.point.subtract(currentPoints.client, lastPoints.client),
-      canvas: cornerstoneMath.point.subtract(currentPoints.canvas, lastPoints.canvas)
+      page: external.cornerstoneMath.point.subtract(currentPoints.page, lastPoints.page),
+      image: external.cornerstoneMath.point.subtract(currentPoints.image, lastPoints.image),
+      client: external.cornerstoneMath.point.subtract(currentPoints.client, lastPoints.client),
+      canvas: external.cornerstoneMath.point.subtract(currentPoints.canvas, lastPoints.canvas)
     };
 
     const eventData = {
       event: e,
       which: whichMouseButton,
       viewport: cornerstone.getViewport(element),
-      image: cornerstone.getEnabledElement(element).image,
+      image: enabledElement.image,
       element,
       startPoints,
       lastPoints,
@@ -193,30 +222,33 @@ function mouseDown (e) {
       type: eventType
     };
 
-    const event = $.Event(eventType, eventData);
+    triggerEvent(eventData.element, eventType, eventData);
 
-    $(eventData.element).trigger(event, eventData);
+    document.removeEventListener('mousemove', onMouseMove);
+    document.removeEventListener('mouseup', onMouseUp);
 
-    $(document).off('mousemove', onMouseMove);
-    $(document).off('mouseup', onMouseUp);
-
-    $(eventData.element).on('mousemove', mouseMove);
+    element.addEventListener('mousemove', mouseMove);
 
     isClickEvent = true;
   }
 
-  $(document).on('mousemove', onMouseMove);
-  $(document).on('mouseup', onMouseUp);
-
-  return pauseEvent(e);
+  document.addEventListener('mousemove', onMouseMove);
+  document.addEventListener('mouseup', onMouseUp);
 }
 
 function mouseMove (e) {
+  const cornerstone = external.cornerstone;
   const element = e.currentTarget;
-  const eventType = 'CornerstoneToolsMouseMove';
+  const enabledElement = cornerstone.getEnabledElement(element);
+
+  if (!enabledElement.image) {
+    return;
+  }
+
+  const eventType = EVENTS.MOUSE_MOVE;
 
   const startPoints = {
-    page: cornerstoneMath.point.pageToPoint(e),
+    page: external.cornerstoneMath.point.pageToPoint(e),
     image: cornerstone.pageToPixel(element, e.pageX, e.pageY),
     client: {
       x: e.clientX,
@@ -228,11 +260,9 @@ function mouseMove (e) {
 
   let lastPoints = copyPoints(startPoints);
 
-  const whichMouseButton = e.which;
-
-    // Calculate our current points in page and image coordinates
+  // Calculate our current points in page and image coordinates
   const currentPoints = {
-    page: cornerstoneMath.point.pageToPoint(e),
+    page: external.cornerstoneMath.point.pageToPoint(e),
     image: cornerstone.pageToPixel(element, e.pageX, e.pageY),
     client: {
       x: e.clientX,
@@ -242,18 +272,17 @@ function mouseMove (e) {
 
   currentPoints.canvas = cornerstone.pixelToCanvas(element, currentPoints.image);
 
-    // Calculate delta values in page and image coordinates
+  // Calculate delta values in page and image coordinates
   const deltaPoints = {
-    page: cornerstoneMath.point.subtract(currentPoints.page, lastPoints.page),
-    image: cornerstoneMath.point.subtract(currentPoints.image, lastPoints.image),
-    client: cornerstoneMath.point.subtract(currentPoints.client, lastPoints.client),
-    canvas: cornerstoneMath.point.subtract(currentPoints.canvas, lastPoints.canvas)
+    page: external.cornerstoneMath.point.subtract(currentPoints.page, lastPoints.page),
+    image: external.cornerstoneMath.point.subtract(currentPoints.image, lastPoints.image),
+    client: external.cornerstoneMath.point.subtract(currentPoints.client, lastPoints.client),
+    canvas: external.cornerstoneMath.point.subtract(currentPoints.canvas, lastPoints.canvas)
   };
 
   const eventData = {
-    which: whichMouseButton,
     viewport: cornerstone.getViewport(element),
-    image: cornerstone.getEnabledElement(element).image,
+    image: enabledElement.image,
     element,
     startPoints,
     lastPoints,
@@ -262,25 +291,25 @@ function mouseMove (e) {
     type: eventType
   };
 
-  $(element).trigger(eventType, eventData);
+  triggerEvent(element, eventType, eventData);
 
-    // Update the last points
+  // Update the last points
   lastPoints = copyPoints(currentPoints);
 }
 
 function disable (element) {
-  $(element).off('mousedown', mouseDown);
-  $(element).off('mousemove', mouseMove);
-  $(element).off('dblclick', mouseDoubleClick);
+  element.removeEventListener('mousedown', mouseDown);
+  element.removeEventListener('mousemove', mouseMove);
+  element.removeEventListener('dblclick', mouseDoubleClick);
 }
 
 function enable (element) {
-    // Prevent handlers from being attached multiple times
+  // Prevent handlers from being attached multiple times
   disable(element);
 
-  $(element).on('mousedown', mouseDown);
-  $(element).on('mousemove', mouseMove);
-  $(element).on('dblclick', mouseDoubleClick);
+  element.addEventListener('mousedown', mouseDown);
+  element.addEventListener('mousemove', mouseMove);
+  element.addEventListener('dblclick', mouseDoubleClick);
 }
 
 // Module exports

@@ -1,9 +1,14 @@
-import * as cornerstone from 'cornerstone-core';
+import EVENTS from '../events.js';
+import external from '../externalModules.js';
+import triggerEvent from '../util/triggerEvent.js';
 
 export default function (mouseEventData, toolType, data, handle, doneMovingCallback, preventHandleOutsideImage) {
+  const cornerstone = external.cornerstone;
   const element = mouseEventData.element;
 
-  function moveCallback (e, eventData) {
+  function moveCallback (e) {
+    const eventData = e.detail;
+
     handle.active = true;
     handle.x = eventData.currentPoints.image.x;
     handle.y = eventData.currentPoints.image.y;
@@ -18,61 +23,65 @@ export default function (mouseEventData, toolType, data, handle, doneMovingCallb
 
     cornerstone.updateImage(element);
 
-    const eventType = 'CornerstoneToolsMeasurementModified';
+    const eventType = EVENTS.MEASUREMENT_MODIFIED;
     const modifiedEventData = {
       toolType,
       element,
       measurementData: data
     };
 
-    $(element).trigger(eventType, modifiedEventData);
+    triggerEvent(element, eventType, modifiedEventData);
   }
 
   function whichMovement (e) {
-    $(element).off('CornerstoneToolsMouseMove', whichMovement);
-    $(element).off('CornerstoneToolsMouseDrag', whichMovement);
+    element.removeEventListener(EVENTS.MOUSE_MOVE, whichMovement);
+    element.removeEventListener(EVENTS.MOUSE_DRAG, whichMovement);
 
-    $(element).on('CornerstoneToolsMouseMove', moveCallback);
-    $(element).on('CornerstoneToolsMouseDrag', moveCallback);
+    element.addEventListener(EVENTS.MOUSE_MOVE, moveCallback);
+    element.addEventListener(EVENTS.MOUSE_DRAG, moveCallback);
 
-    $(element).on('CornerstoneToolsMouseClick', moveEndCallback);
-    if (e.type === 'CornerstoneToolsMouseDrag') {
-      $(element).on('CornerstoneToolsMouseUp', moveEndCallback);
+    element.addEventListener(EVENTS.MOUSE_CLICK, moveEndCallback);
+    if (e.type === EVENTS.MOUSE_DRAG) {
+      element.addEventListener(EVENTS.MOUSE_UP, moveEndCallback);
     }
   }
 
-  function measurementRemovedCallback (e, eventData) {
+  function measurementRemovedCallback (e) {
+    const eventData = e.detail;
+
     if (eventData.measurementData === data) {
       moveEndCallback();
     }
   }
 
-  function toolDeactivatedCallback (e, eventData) {
+  function toolDeactivatedCallback (e) {
+    const eventData = e.detail;
+
     if (eventData.toolType === toolType) {
-      $(element).off('CornerstoneToolsMouseMove', moveCallback);
-      $(element).off('CornerstoneToolsMouseDrag', moveCallback);
-      $(element).off('CornerstoneToolsMouseClick', moveEndCallback);
-      $(element).off('CornerstoneToolsMouseUp', moveEndCallback);
-      $(element).off('CornerstoneToolsMeasurementRemoved', measurementRemovedCallback);
-      $(element).off('CornerstoneToolsToolDeactivated', toolDeactivatedCallback);
+      element.removeEventListener(EVENTS.MOUSE_MOVE, moveCallback);
+      element.removeEventListener(EVENTS.MOUSE_DRAG, moveCallback);
+      element.removeEventListener(EVENTS.MOUSE_CLICK, moveEndCallback);
+      element.removeEventListener(EVENTS.MOUSE_UP, moveEndCallback);
+      element.removeEventListener(EVENTS.MEASUREMENT_REMOVED, measurementRemovedCallback);
+      element.removeEventListener(EVENTS.TOOL_DEACTIVATED, toolDeactivatedCallback);
 
       handle.active = false;
       cornerstone.updateImage(element);
     }
   }
 
-  $(element).on('CornerstoneToolsMouseDrag', whichMovement);
-  $(element).on('CornerstoneToolsMouseMove', whichMovement);
-  $(element).on('CornerstoneToolsMeasurementRemoved', measurementRemovedCallback);
-  $(element).on('CornerstoneToolsToolDeactivated', toolDeactivatedCallback);
+  element.addEventListener(EVENTS.MOUSE_DRAG, whichMovement);
+  element.addEventListener(EVENTS.MOUSE_MOVE, whichMovement);
+  element.addEventListener(EVENTS.MEASUREMENT_REMOVED, measurementRemovedCallback);
+  element.addEventListener(EVENTS.TOOL_DEACTIVATED, toolDeactivatedCallback);
 
   function moveEndCallback () {
-    $(element).off('CornerstoneToolsMouseMove', moveCallback);
-    $(element).off('CornerstoneToolsMouseDrag', moveCallback);
-    $(element).off('CornerstoneToolsMouseClick', moveEndCallback);
-    $(element).off('CornerstoneToolsMouseUp', moveEndCallback);
-    $(element).off('CornerstoneToolsMeasurementRemoved', measurementRemovedCallback);
-    $(element).off('CornerstoneToolsToolDeactivated', toolDeactivatedCallback);
+    element.removeEventListener(EVENTS.MOUSE_MOVE, moveCallback);
+    element.removeEventListener(EVENTS.MOUSE_DRAG, moveCallback);
+    element.removeEventListener(EVENTS.MOUSE_CLICK, moveEndCallback);
+    element.removeEventListener(EVENTS.MOUSE_UP, moveEndCallback);
+    element.removeEventListener(EVENTS.MEASUREMENT_REMOVED, measurementRemovedCallback);
+    element.removeEventListener(EVENTS.TOOL_DEACTIVATED, toolDeactivatedCallback);
 
     handle.active = false;
     cornerstone.updateImage(element);

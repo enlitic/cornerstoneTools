@@ -1,19 +1,21 @@
 /* eslint no-alert:0 */
-import * as cornerstone from 'cornerstone-core';
-import * as cornerstoneMath from 'cornerstone-math';
+import EVENTS from '../events.js';
+import external from '../externalModules.js';
 import mouseButtonTool from './mouseButtonTool.js';
-import touchTool from './touchTool';
+import touchTool from './touchTool.js';
 import drawTextBox from '../util/drawTextBox.js';
 import textStyle from '../stateManagement/textStyle.js';
 import toolStyle from '../stateManagement/toolStyle.js';
 import toolColors from '../stateManagement/toolColors.js';
 import anyHandlesOutsideImage from '../manipulators/anyHandlesOutsideImage.js';
-import moveHandle from '../manipulators/moveHandle';
-import drawHandles from '../manipulators/drawHandles';
-import drawCircle from '../util/drawCircle';
-import isMouseButtonEnabled from '../util/isMouseButtonEnabled';
-import pointInsideBoundingBox from '../util/pointInsideBoundingBox';
+import moveHandle from '../manipulators/moveHandle.js';
+import drawHandles from '../manipulators/drawHandles.js';
+import drawCircle from '../util/drawCircle.js';
+import isMouseButtonEnabled from '../util/isMouseButtonEnabled.js';
+import pointInsideBoundingBox from '../util/pointInsideBoundingBox.js';
+import drawLink from '../util/drawLink.js';
 import { addToolState, removeToolState, getToolState } from '../stateManagement/toolState.js';
+import { getToolOptions } from '../toolOptions.js';
 
 const toolType = 'seedAnnotate';
 
@@ -41,6 +43,7 @@ const configuration = {
 
 // /////// BEGIN ACTIVE TOOL ///////
 function addNewMeasurement (mouseEventData) {
+  const cornerstone = external.cornerstone;
   const element = mouseEventData.element;
   const config = seedAnnotate.getConfiguration();
   const measurementData = createNewMeasurement(mouseEventData);
@@ -56,13 +59,13 @@ function addNewMeasurement (mouseEventData) {
     cornerstone.updateImage(element);
   }
 
-    // Associate this data with this imageId so we can render it and manipulate it
+  // Associate this data with this imageId so we can render it and manipulate it
   addToolState(element, toolType, measurementData);
 
   cornerstone.updateImage(element);
   moveHandle(mouseEventData, toolType, measurementData, measurementData.handles.end, function () {
     if (anyHandlesOutsideImage(mouseEventData, measurementData.handles)) {
-            // Delete the measurement
+      // Delete the measurement
       removeToolState(element, toolType, measurementData);
     }
 
@@ -75,10 +78,11 @@ function addNewMeasurement (mouseEventData) {
 }
 
 function createNewMeasurement (mouseEventData) {
-    // Create the measurement data for this tool with the end handle activated
+  // Create the measurement data for this tool with the end handle activated
   const measurementData = {
     visible: true,
     active: true,
+    color: undefined,
     handles: {
       end: {
         x: mouseEventData.currentPoints.image.x,
@@ -103,19 +107,24 @@ function createNewMeasurement (mouseEventData) {
 // /////// END ACTIVE TOOL ///////
 
 function pointNearTool (element, data, coords) {
+  if (data.visible === false) {
+    return false;
+  }
+
   if (!data.handles.end) {
     return;
   }
 
-  const realCoords = cornerstone.pixelToCanvas(element, data.handles.end);
-  const distanceToPoint = cornerstoneMath.point.distance(realCoords, coords);
+  const realCoords = external.cornerstone.pixelToCanvas(element, data.handles.end);
+  const distanceToPoint = external.cornerstoneMath.point.distance(realCoords, coords);
 
 
   return (distanceToPoint < 25);
 }
 
 // /////// BEGIN IMAGE RENDERING ///////
-function onImageRendered (e, eventData) {
+function onImageRendered (e) {
+  const eventData = e.detail;
   // If we have no toolData for this element, return immediately as there is nothing to do
   const toolData = getToolState(e.currentTarget, toolType);
 
@@ -123,17 +132,17 @@ function onImageRendered (e, eventData) {
     return;
   }
 
+  const cornerstone = external.cornerstone;
   const enabledElement = eventData.enabledElement;
 
-    // We have tool data for this element - iterate over each one and draw it
+  // We have tool data for this element - iterate over each one and draw it
   const context = eventData.canvasContext.canvas.getContext('2d');
 
   context.setTransform(1, 0, 0, 1, 0, 0);
 
-    // We need the canvas width
+  // We need the canvas width
   const canvasWidth = eventData.canvasContext.canvas.width;
 
-  let color;
   const lineWidth = toolStyle.getToolWidth();
   const font = textStyle.getFont();
   const config = seedAnnotate.getConfiguration();
@@ -149,16 +158,16 @@ function onImageRendered (e, eventData) {
 
     const data = toolData.data[i];
 
-    if (data.active) {
-      color = toolColors.getActiveColor();
-    } else {
-      color = toolColors.getToolColor();
+    if (data.visible === false) {
+      continue;
     }
 
-        // Draw
+    const color = toolColors.getColorIfActive(data);
+
+    // Draw
     const handleCanvas = cornerstone.pixelToCanvas(eventData.element, data.handles.end);
 
-        // Draw the circle always at the end of the handle
+    // Draw the circle always at the end of the handle
     drawCircle(context, handleCanvas, color, lineWidth);
 
     const handleOptions = {
@@ -169,7 +178,7 @@ function onImageRendered (e, eventData) {
       drawHandles(context, eventData, handleCanvas, color, handleOptions);
     }
 
-        // Draw the text
+    // Draw the text
     if (data.text && data.text !== '') {
       context.font = font;
 
@@ -177,12 +186,12 @@ function onImageRendered (e, eventData) {
 
       if (config.showCoordinates) {
         textPlusCoords = `${data.text} x: ${Math.round(data.handles.end.x)
-                } y: ${Math.round(data.handles.end.y)}`;
+        } y: ${Math.round(data.handles.end.y)}`;
       } else {
         textPlusCoords = data.text;
       }
 
-            // Calculate the text coordinates.
+      // Calculate the text coordinates.
       const textWidth = context.measureText(textPlusCoords).width + 10;
       const textHeight = textStyle.getFontSize() + 10;
 
@@ -217,46 +226,8 @@ function onImageRendered (e, eventData) {
       data.handles.textBox.boundingBox = boundingBox;
 
       if (data.handles.textBox.hasMoved) {
-                // Draw dashed link line between tool and text
-        const link = {
-          start: {},
-          end: {}
-        };
-
-        link.end.x = textCoords.x;
-        link.end.y = textCoords.y;
-
-        link.start = handleCanvas;
-
-        const boundingBoxPoints = [
-          {
-                    // Top middle point of bounding box
-            x: boundingBox.left + boundingBox.width / 2,
-            y: boundingBox.top
-          }, {
-                    // Left middle point of bounding box
-            x: boundingBox.left,
-            y: boundingBox.top + boundingBox.height / 2
-          }, {
-                    // Bottom middle point of bounding box
-            x: boundingBox.left + boundingBox.width / 2,
-            y: boundingBox.top + boundingBox.height
-          }, {
-                    // Right middle point of bounding box
-            x: boundingBox.left + boundingBox.width,
-            y: boundingBox.top + boundingBox.height / 2
-          }
-        ];
-
-        link.end = cornerstoneMath.point.findClosestPoint(boundingBoxPoints, link.start);
-
-        context.beginPath();
-        context.strokeStyle = color;
-        context.lineWidth = lineWidth;
-        context.setLineDash([2, 3]);
-        context.moveTo(link.start.x, link.start.y);
-        context.lineTo(link.end.x, link.end.y);
-        context.stroke();
+        // Draw dashed link line between tool and text
+        drawLink([], handleCanvas, boundingBox, context, color, lineWidth);
       }
     }
 
@@ -267,6 +238,7 @@ function onImageRendered (e, eventData) {
 
 // /////// BEGIN ACTIVE TOOL ///////
 function addNewMeasurementTouch (touchEventData) {
+  const cornerstone = external.cornerstone;
   const element = touchEventData.element;
   const config = seedAnnotate.getConfiguration();
   const measurementData = createNewMeasurement(touchEventData);
@@ -282,13 +254,13 @@ function addNewMeasurementTouch (touchEventData) {
     cornerstone.updateImage(element);
   }
 
-    // Associate this data with this imageId so we can render it and manipulate it
+  // Associate this data with this imageId so we can render it and manipulate it
   addToolState(element, toolType, measurementData);
 
   cornerstone.updateImage(element);
   moveHandle(touchEventData, toolType, measurementData, measurementData.handles.end, function () {
     if (anyHandlesOutsideImage(touchEventData, measurementData.handles)) {
-            // Delete the measurement
+      // Delete the measurement
       removeToolState(element, toolType, measurementData);
     }
 
@@ -300,9 +272,16 @@ function addNewMeasurementTouch (touchEventData) {
   });
 }
 
-function doubleClickCallback (e, eventData) {
+function doubleClickCallback (e) {
+  const eventData = e.detail;
+  const cornerstone = external.cornerstone;
   const element = eventData.element;
   let data;
+  const options = getToolOptions(toolType, element);
+
+  if (!isMouseButtonEnabled(eventData.which, options.mouseButtonMask)) {
+    return;
+  }
 
   function doneChangingTextCallback (data, updatedText, deleteTool) {
     if (deleteTool === true) {
@@ -315,16 +294,12 @@ function doubleClickCallback (e, eventData) {
     cornerstone.updateImage(element);
   }
 
-  if (e.data && e.data.mouseButtonMask && !isMouseButtonEnabled(eventData.which, e.data.mouseButtonMask)) {
-    return;
-  }
-
   const config = seedAnnotate.getConfiguration();
 
   const coords = eventData.currentPoints.canvas;
   const toolData = getToolState(element, toolType);
 
-    // Now check to see if there is a handle we can move
+  // Now check to see if there is a handle we can move
   if (!toolData) {
     return;
   }
@@ -336,7 +311,7 @@ function doubleClickCallback (e, eventData) {
 
       data.active = true;
       cornerstone.updateImage(element);
-            // Allow relabelling via a callback
+      // Allow relabelling via a callback
       config.changeTextCallback(data, eventData, doneChangingTextCallback);
 
       e.stopImmediatePropagation();
@@ -345,10 +320,13 @@ function doubleClickCallback (e, eventData) {
     }
   }
 
-  return false; // False = causes jquery to preventDefault() and stopPropagation() this event
+  e.preventDefault();
+  e.stopPropagation();
 }
 
-function pressCallback (e, eventData) {
+function pressCallback (e) {
+  const eventData = e.detail;
+  const cornerstone = external.cornerstone;
   const element = eventData.element;
   let data;
 
@@ -363,13 +341,9 @@ function pressCallback (e, eventData) {
     data.active = false;
     cornerstone.updateImage(element);
 
-    $(element).on('CornerstoneToolsTouchStart', seedAnnotateTouch.touchStartCallback);
-    $(element).on('CornerstoneToolsTouchStartActive', seedAnnotateTouch.touchDownActivateCallback);
-    $(element).on('CornerstoneToolsTap', seedAnnotateTouch.tapCallback);
-  }
-
-  if (e.data && e.data.mouseButtonMask && !isMouseButtonEnabled(eventData.which, e.data.mouseButtonMask)) {
-    return false;
+    element.addEventListener(EVENTS.TOUCH_START, seedAnnotateTouch.touchStartCallback);
+    element.addEventListener(EVENTS.TOUCH_START_ACTIVE, seedAnnotateTouch.touchDownActivateCallback);
+    element.addEventListener(EVENTS.TAP, seedAnnotateTouch.tapCallback);
   }
 
   const config = seedAnnotate.getConfiguration();
@@ -377,17 +351,17 @@ function pressCallback (e, eventData) {
   const coords = eventData.currentPoints.canvas;
   const toolData = getToolState(element, toolType);
 
-    // Now check to see if there is a handle we can move
+  // Now check to see if there is a handle we can move
   if (!toolData) {
     return false;
   }
 
   if (eventData.handlePressed) {
-    $(element).off('CornerstoneToolsTouchStart', seedAnnotateTouch.touchStartCallback);
-    $(element).off('CornerstoneToolsTouchStartActive', seedAnnotateTouch.touchDownActivateCallback);
-    $(element).off('CornerstoneToolsTap', seedAnnotateTouch.tapCallback);
+    element.removeEventListener(EVENTS.TOUCH_START, seedAnnotateTouch.touchStartCallback);
+    element.removeEventListener(EVENTS.TOUCH_START_ACTIVE, seedAnnotateTouch.touchDownActivateCallback);
+    element.removeEventListener(EVENTS.TAP, seedAnnotateTouch.tapCallback);
 
-        // Allow relabelling via a callback
+    // Allow relabelling via a callback
     config.changeTextCallback(eventData.handlePressed, eventData, doneChangingTextCallback);
 
     e.stopImmediatePropagation();
@@ -402,11 +376,11 @@ function pressCallback (e, eventData) {
       data.active = true;
       cornerstone.updateImage(element);
 
-      $(element).off('CornerstoneToolsTouchStart', seedAnnotateTouch.touchStartCallback);
-      $(element).off('CornerstoneToolsTouchStartActive', seedAnnotateTouch.touchDownActivateCallback);
-      $(element).off('CornerstoneToolsTap', seedAnnotateTouch.tapCallback);
+      element.removeEventListener(EVENTS.TOUCH_START, seedAnnotateTouch.touchStartCallback);
+      element.removeEventListener(EVENTS.TOUCH_START_ACTIVE, seedAnnotateTouch.touchDownActivateCallback);
+      element.removeEventListener(EVENTS.TAP, seedAnnotateTouch.tapCallback);
 
-            // Allow relabelling via a callback
+      // Allow relabelling via a callback
       config.changeTextCallback(data, eventData, doneChangingTextCallback);
 
       e.stopImmediatePropagation();
@@ -415,7 +389,8 @@ function pressCallback (e, eventData) {
     }
   }
 
-  return false; // False = causes jquery to preventDefault() and stopPropagation() this event
+  e.preventDefault();
+  e.stopPropagation();
 }
 
 const seedAnnotate = mouseButtonTool({

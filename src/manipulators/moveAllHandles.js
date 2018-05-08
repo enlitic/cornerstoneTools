@@ -1,11 +1,17 @@
-import * as cornerstone from 'cornerstone-core';
-import anyHandlesOutsideImage from './anyHandlesOutsideImage';
-import { removeToolState } from '../stateManagement/toolState';
+import EVENTS from '../events.js';
+import external from '../externalModules.js';
+import anyHandlesOutsideImage from './anyHandlesOutsideImage.js';
+import { removeToolState } from '../stateManagement/toolState.js';
+import triggerEvent from '../util/triggerEvent.js';
 
-export default function (mouseEventData, data, toolData, toolType, options, doneMovingCallback) {
+export default function (e, data, toolData, toolType, options, doneMovingCallback) {
+  const cornerstone = external.cornerstone;
+  const mouseEventData = e.detail;
   const element = mouseEventData.element;
 
-  function mouseDragCallback (e, eventData) {
+  function mouseDragCallback (e) {
+    const eventData = e.detail;
+
     data.active = true;
 
     Object.keys(data.handles).forEach(function (name) {
@@ -29,28 +35,31 @@ export default function (mouseEventData, data, toolData, toolType, options, done
 
     cornerstone.updateImage(element);
 
-    const eventType = 'CornerstoneToolsMeasurementModified';
+    const eventType = EVENTS.MEASUREMENT_MODIFIED;
     const modifiedEventData = {
       toolType,
       element,
       measurementData: data
     };
 
-    $(element).trigger(eventType, modifiedEventData);
+    triggerEvent(element, eventType, modifiedEventData);
 
-    return false; // False = causes jquery to preventDefault() and stopPropagation() this event
+    e.preventDefault();
+    e.stopPropagation();
   }
 
-  $(element).on('CornerstoneToolsMouseDrag', mouseDragCallback);
+  element.addEventListener(EVENTS.MOUSE_DRAG, mouseDragCallback);
 
-  function mouseUpCallback (e, eventData) {
+  function mouseUpCallback (e) {
+    const eventData = e.detail;
+
     data.invalidated = true;
 
-    $(element).off('CornerstoneToolsMouseDrag', mouseDragCallback);
-    $(element).off('CornerstoneToolsMouseUp', mouseUpCallback);
-    $(element).off('CornerstoneToolsMouseClick', mouseUpCallback);
+    element.removeEventListener(EVENTS.MOUSE_DRAG, mouseDragCallback);
+    element.removeEventListener(EVENTS.MOUSE_UP, mouseUpCallback);
+    element.removeEventListener(EVENTS.MOUSE_CLICK, mouseUpCallback);
 
-        // If any handle is outside the image, delete the tool data
+    // If any handle is outside the image, delete the tool data
     if (options.deleteIfHandleOutsideImage === true &&
             anyHandlesOutsideImage(eventData, data.handles)) {
       removeToolState(element, toolType, data);
@@ -63,8 +72,8 @@ export default function (mouseEventData, data, toolData, toolType, options, done
     }
   }
 
-  $(element).on('CornerstoneToolsMouseUp', mouseUpCallback);
-  $(element).on('CornerstoneToolsMouseClick', mouseUpCallback);
+  element.addEventListener(EVENTS.MOUSE_UP, mouseUpCallback);
+  element.addEventListener(EVENTS.MOUSE_CLICK, mouseUpCallback);
 
   return true;
 }

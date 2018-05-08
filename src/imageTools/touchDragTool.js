@@ -1,44 +1,54 @@
-export default function (touchDragCallback, options) {
-  let events = 'CornerstoneToolsTouchDrag';
+import EVENTS from '../events.js';
+import { setToolOptions } from '../toolOptions.js';
+
+export default function (touchDragCallback, toolType, options) {
+  const events = [EVENTS.TOUCH_DRAG];
 
   if (options && options.fireOnTouchStart === true) {
-    events += ' CornerstoneToolsTouchStart';
+    events.push(EVENTS.TOUCH_START);
   }
 
-  const toolInterface = {
+  return {
     activate (element) {
-      $(element).off(events, touchDragCallback);
-
       if (options && options.eventData) {
-        $(element).on(events, options.eventData, touchDragCallback);
-      } else {
-        $(element).on(events, touchDragCallback);
+        setToolOptions(toolType, element, options.eventData);
       }
+
+      events.forEach((eventType) => {
+        element.removeEventListener(eventType, touchDragCallback);
+        element.addEventListener(eventType, touchDragCallback);
+      });
 
       if (options && options.activateCallback) {
         options.activateCallback(element);
       }
     },
     disable (element) {
-      $(element).off(events, touchDragCallback);
+      events.forEach((eventType) => {
+        element.removeEventListener(eventType, touchDragCallback);
+      });
+
       if (options && options.disableCallback) {
         options.disableCallback(element);
       }
     },
     enable (element) {
-      $(element).off(events, touchDragCallback);
+      events.forEach((eventType) => {
+        element.removeEventListener(eventType, touchDragCallback);
+      });
+
       if (options && options.enableCallback) {
         options.enableCallback(element);
       }
     },
     deactivate (element) {
-      $(element).off(events, touchDragCallback);
+      events.forEach((eventType) => {
+        element.removeEventListener(eventType, touchDragCallback);
+      });
+
       if (options && options.deactivateCallback) {
         options.deactivateCallback(element);
       }
     }
   };
-
-
-  return toolInterface;
 }

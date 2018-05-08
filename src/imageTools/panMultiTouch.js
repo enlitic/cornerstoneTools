@@ -1,15 +1,17 @@
-import * as cornerstone from 'cornerstone-core';
-import multiTouchDragTool from './multiTouchDragTool';
+import external from '../externalModules.js';
+import multiTouchDragTool from './multiTouchDragTool.js';
 
-function touchPanCallback (e, eventData) {
+function touchPanCallback (e) {
+  const eventData = e.detail;
   const config = panMultiTouch.getConfiguration();
 
   if (config && config.testPointers(eventData)) {
     eventData.viewport.translation.x += (eventData.deltaPoints.page.x / eventData.viewport.scale);
     eventData.viewport.translation.y += (eventData.deltaPoints.page.y / eventData.viewport.scale);
-    cornerstone.setViewport(eventData.element, eventData.viewport);
+    external.cornerstone.setViewport(eventData.element, eventData.viewport);
 
-    return false; // False = causes jquery to preventDefault() and stopPropagation() this event
+    e.preventDefault();
+    e.stopPropagation();
   }
 }
 
