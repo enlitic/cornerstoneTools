@@ -670,9 +670,6 @@ function onImageRendered (e) {
 
     if (data.active && !data.polyBoundingBox) {
       drawHandles(context, eventData, config.mouseLocation.handles, color, options);
-
-      // Only draw the vertices if this is the active contour.
-      drawHandles(context, eventData, data.handles, color, options);
     }
     // Draw the handles
     drawHandles(context, eventData, data.handles, color, options);
